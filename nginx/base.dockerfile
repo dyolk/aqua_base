@@ -19,3 +19,6 @@ RUN apt-get -y update && apt-get -y upgrade
 RUN <<EOF
 set -e
 EOF
+
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]

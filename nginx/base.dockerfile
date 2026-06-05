@@ -14,7 +14,8 @@ RUN test -z "${NGINX_VERSION}" && { \
     exit 1; \
 } || echo -e "\n\033[1;32m⚙️ 正在基于 Nginx 版本 [ ${NGINX_VERSION} ] 开始构建...\033[0m\n"
 
-RUN apt-get -y update && apt-get -y upgrade
+RUN apt-get -y update && apt-get -y upgrade && \
+    apt-get -y install wget curl gcc*
 
 RUN <<EOF
 set -e

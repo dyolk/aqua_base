@@ -1,8 +1,9 @@
 [debian]
-bookworm = """
-Types: deb
-URIs: http://mirrors.aliyun.com/debian/
-Suites: bookworm bookworm-updates bookworm-backports
-Components: main contrib non-free non-free-firmware
-Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-"""
+"bookworm" = "/etc/apt/sources.list | deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware"
+"trixie" = "/etc/apt/sources.list | deb http://mirrors.aliyun.com/debian/ trixie main contrib non-free non-free-firmware"
+
+[ubuntu]
+"noble" = "/etc/apt/sources.list | deb http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse"
+
+[alpine]
+"3.20" = "/etc/alpine-repositories | http://mirrors.aliyun.com/alpine/v3.20/main;http://mirrors.aliyun.com/alpine/v3.20/community"

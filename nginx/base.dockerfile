@@ -1,25 +1,79 @@
 # syntax=docker/dockerfile:1
-FROM debian:bookworm-slim AS builder
+FROM debian:trixie-slim AS builder
 
 ARG NGINX_VERSION
 
-RUN test -z "${NGINX_VERSION}" && { \
-    echo -e "\n\033[1;31m+------------------------------------------------------------+\033[0m"; \
-    echo -e "\033[1;31m| ❌【构建失败】错误时间: $(date '+%Y-%m-%d %H:%M:%S')             |\033[0m"; \
-    echo -e "\033[1;31m+------------------------------------------------------------+\033[0m"; \
-    echo -e "\033[1;31m| 📝 原因: 未检测到必要构建参数 'NGINX_VERSION'                  |\033[0m"; \
-    echo -e "\033[1;33m| 💡 解决: 请在执行 docker build 时加上 --build-arg 选项         |\033[0m"; \
-    echo -e "\033[1;32m|    示例: docker build --build-arg NGINX_VERSION=1.25.3 .   |\033[0m"; \
-    echo -e "\033[1;31m+------------------------------------------------------------+\033[0m\n"; \
-    exit 1; \
-} || echo -e "\n\033[1;32m⚙️ 正在基于 Nginx 版本 [ ${NGINX_VERSION} ] 开始构建...\033[0m\n"
-
-RUN apt-get -y update && apt-get -y upgrade && \
-    apt-get -y install wget curl gcc*
+COPY sources.toml /tmp/sources.toml
 
 RUN <<EOF
 set -e
+
+if [ -z "${NGINX_VERSION}" ]; then
+    printf "\n\033[1;31m+------------------------------------------------------------+\033[0m\n"
+    printf "\033[1;31m| ❌ 【构建失败】未检测到必要构建参数 'NGINX_VERSION'         |\033[0m\n"
+    printf "\033[1;31m+------------------------------------------------------------+\033[0m\n\n"
+    exit 1
+fi
+
+. /etc/os-release
+OS_ID="${ID}"
+OS_CODENAME="${VERSION_CODENAME}"
+
+# 🧼 【自愈第一步】：暴力洗白 toml 文件，抹掉所有恶心的 \r 换行符
+tr -d '\r' < /tmp/sources.toml > /tmp/pure.toml
+
+# 🔍 【自愈第二步】：用 grep -n 抓取含有当前版本号的行号
+# 只要这一行包含 trixie 且包含 = 号，就跑不掉
+LINE_NUM=$(grep -n "${OS_CODENAME}" /tmp/pure.toml | grep "=" | cut -d':' -f1 | head -n1)
+
+if [ -z "${LINE_NUM}" ]; then
+    printf "\n\033[1;31m❌【换源失败】在 sources.toml 中根本找不到包含 [%s] 关键字的有效行！\033[0m\n" "${OS_CODENAME}"
+    printf "📄 当前 pure.toml 完整内容如下，请肉眼核对：\n"
+    cat /tmp/pure.toml
+    exit 1
+fi
+
+# 🎯 【自愈第三步】：用 sed 直接提取这一行的整行文本
+RAW_ROW=$(sed -n "${LINE_NUM}p" /tmp/pure.toml)
+
+# 4. 用 cut 剥离掉双引号之间的“路径|内容”（取倒数第二个双引号里的内容，防止干扰）
+RAW_LINE=$(echo "${RAW_ROW}" | awk -F'"' '{print $(NF-1)}')
+
+# 5. 解耦路径与内容
+TARGET_PATH=$(echo "${RAW_LINE}" | cut -d'|' -f1 | xargs)
+SOURCE_CONTENT=$(echo "${RAW_LINE}" | cut -d'|' -f2- | xargs)
+
+if [ -z "${TARGET_PATH}" ] || [ -z "${SOURCE_CONTENT}" ]; then
+    printf "\n\033[1;31m❌【解析失败】成功找到了行，但没办法从中切出路径和内容！\033[0m\n"
+    printf "🔍 抓到的原始行: [%s]\n" "${RAW_ROW}"
+    printf "🔍 解析出的内容: [%s]\n" "${RAW_LINE}"
+    exit 1
+fi
+
+# 6. 清理旧源
+rm -rf /etc/apt/sources.list /etc/apt/sources.list.d/*
+
+# 7. 动态创建目标父目录
+mkdir -p "$(dirname "${TARGET_PATH}")"
+
+# 8. 写入
+if [ "${OS_ID}" = "alpine" ]; then
+    echo "${SOURCE_CONTENT}" | tr ';' '\n' > "${TARGET_PATH}"
+else
+    echo "${SOURCE_CONTENT}" > "${TARGET_PATH}"
+fi
+
+rm -f /tmp/sources.toml /tmp/pure.toml
 EOF
 
-EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+RUN <<EOF
+set -e
+
+apt-get update
+apt-get upgrade -y --no-install-recommends
+apt-get install -y --no-install-recommends \
+    wget \
+    build-essential
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+EOF

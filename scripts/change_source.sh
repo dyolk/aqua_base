@@ -21,7 +21,7 @@ set -euo pipefail
 
 # ---- 默认值 ----
 YQ="${YQ_BIN:-yq}"
-SOURCES_FILE="/config/sources.yaml"
+SOURCES_FILE="/config/common/sources.yaml"
 TARGETS=()
 
 # ---- 解析参数 ----

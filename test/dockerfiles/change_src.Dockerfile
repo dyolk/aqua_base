@@ -1,7 +1,11 @@
+# syntax=docker/dockerfile:1
 FROM debian:trixie-slim AS builder
 
-COPY scripts/change_source.sh /scripts/change_source.sh
-COPY config/sources.yaml      /config/sources.yaml
-RUN chmod +x /scripts/change_source.sh
+COPY scripts/change_source.sh                   /dyolk/aqua_base/scripts/change_source.sh
+COPY config/common/sources.yaml                 /dyolk/aqua_base/config/common/sources.yaml
+COPY test/hashfiles                             /dyolk/aqua_base/test/hashfiles
 
-RUN bash /scripts/change_source.sh debian python
+RUN << EOF
+chmod +x /dyolk/aqua_base/scripts/change_source.sh
+bash /scripts/change_source.sh debian python
+EOF

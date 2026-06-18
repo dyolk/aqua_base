@@ -19,11 +19,8 @@ fi
 OS_ID="${ID}"
 OS_CODENAME="${VERSION_CODENAME}"
 
-# 🧼 【自愈第一步】：暴力洗白 toml 文件，抹掉所有恶心的 \r 换行符
 tr -d '\r' < /tmp/sources.toml > /tmp/pure.toml
 
-# 🔍 【自愈第二步】：用 grep -n 抓取含有当前版本号的行号
-# 只要这一行包含 trixie 且包含 = 号，就跑不掉
 LINE_NUM=$(grep -n "${OS_CODENAME}" /tmp/pure.toml | grep "=" | cut -d':' -f1 | head -n1)
 
 if [ -z "${LINE_NUM}" ]; then
@@ -33,13 +30,10 @@ if [ -z "${LINE_NUM}" ]; then
     exit 1
 fi
 
-# 🎯 【自愈第三步】：用 sed 直接提取这一行的整行文本
 RAW_ROW=$(sed -n "${LINE_NUM}p" /tmp/pure.toml)
 
-# 4. 用 cut 剥离掉双引号之间的“路径|内容”（取倒数第二个双引号里的内容，防止干扰）
 RAW_LINE=$(echo "${RAW_ROW}" | awk -F'"' '{print $(NF-1)}')
 
-# 5. 解耦路径与内容
 TARGET_PATH=$(echo "${RAW_LINE}" | cut -d'|' -f1 | xargs)
 SOURCE_CONTENT=$(echo "${RAW_LINE}" | cut -d'|' -f2- | xargs)
 
@@ -50,13 +44,10 @@ if [ -z "${TARGET_PATH}" ] || [ -z "${SOURCE_CONTENT}" ]; then
     exit 1
 fi
 
-# 6. 清理旧源
 rm -rf /etc/apt/sources.list /etc/apt/sources.list.d/*
 
-# 7. 动态创建目标父目录
 mkdir -p "$(dirname "${TARGET_PATH}")"
 
-# 8. 写入
 if [ "${OS_ID}" = "alpine" ]; then
     echo "${SOURCE_CONTENT}" | tr ';' '\n' > "${TARGET_PATH}"
 else

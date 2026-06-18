@@ -1,3 +1,6 @@
 # IDEs
 .idea/
 .vscode/
+
+# yq binary (downloaded by build_and_push.sh)
+bin/yq

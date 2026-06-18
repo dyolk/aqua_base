@@ -1,0 +1,42 @@
+# ============================================================
+# Aqua Base - 镜像源配置
+# ============================================================
+# 格式:
+#   os:                    # 操作系统源
+#     <os_id>:             # debian / alpine / ubuntu
+#       <codename>:        # bookworm / trixie / "3.20"
+#         path: <路径>
+#         urls:
+#           - <url>
+#   runtime:               # 运行时 / 工具源
+#     <runtime_id>:        # python / node / go
+#       all:               # 版本通配
+#         path: <路径>
+#         urls:
+#           - <url>
+# ============================================================
+
+os:
+  debian:
+    bookworm:
+      path: /etc/apt/sources.list
+      urls:
+        - "deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware"
+    trixie:
+      path: /etc/apt/sources.list
+      urls:
+        - "deb http://mirrors.aliyun.com/debian/ trixie main contrib non-free non-free-firmware"
+
+  alpine:
+    "3.20":
+      path: /etc/apk/repositories
+      urls:
+        - "http://mirrors.aliyun.com/alpine/v3.20/main"
+        - "http://mirrors.aliyun.com/alpine/v3.20/community"
+
+runtime:
+  python:
+    all:
+      path: /root/.pip/pip.conf
+      urls:
+        - "https://pypi.tuna.tsinghua.edu.cn/simple"

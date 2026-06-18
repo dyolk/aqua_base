@@ -1,4 +1,4 @@
 nginx:
-  version: 1.30.2
+  version: "1.30.2"
   uid: 10000
   gid: 10000

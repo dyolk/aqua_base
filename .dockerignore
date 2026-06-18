@@ -1,0 +1,12 @@
+# IDEs
+.vscode/
+.idea/
+
+# git
+.gitignore
+.git/
+LICENSE
+README.md
+
+# project
+UID_GID_TABLE.md
